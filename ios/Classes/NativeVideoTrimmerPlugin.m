@@ -7,6 +7,10 @@
 
 @end
 
+static NSString * kDefaultTrimErrorCode = @"trim.error.default";
+static NSString * kImpossibleToTrimErrorCode = @"trim.error.impossible";
+
+#define CALL_FLOAT_ARG(key) ((NSNumber *) call.arguments[key]).floatValue
 
 @implementation NativeVideoTrimmerPlugin
 
@@ -24,7 +28,7 @@
 }
 
 - (void)videoEditorController:(UIVideoEditorController *)editor didFailWithError:(NSError *)error {
-    self.result([FlutterError errorWithCode:@"trim.error" message:error.localizedDescription details:nil]);
+    self.result([FlutterError errorWithCode:kDefaultTrimErrorCode message:error.localizedDescription details:nil]);
     [editor dismissViewControllerAnimated:YES completion:nil];
 }
 
@@ -33,16 +37,33 @@
     [editor dismissViewControllerAnimated:YES completion:nil];
 }
 
+
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([@"run" isEqualToString:call.method]) {
       NSString* videoPath = call.arguments[@"path"];
+      if ([UIVideoEditorController canEditVideoAtPath:videoPath]){
       UIVideoEditorController *videoEditor = [[UIVideoEditorController alloc] init];
       videoEditor.videoPath = videoPath;
       videoEditor.videoQuality = UIImagePickerControllerQualityTypeHigh;
       videoEditor.delegate = self;
-      videoEditor.modalPresentationStyle = UIModalPresentationFullScreen;
+      if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ){
+            CGRect popoverSourceRect = CGRectMake(
+                CALL_FLOAT_ARG(@"sourceRectOriginX"),
+                CALL_FLOAT_ARG(@"sourceRectOriginY"),
+                CALL_FLOAT_ARG(@"sourceRectSizeWidth"),
+                CALL_FLOAT_ARG(@"sourceRectSizeHeight")
+            );
+            videoEditor.modalPresentationStyle = UIModalPresentationPopover;
+            videoEditor.popoverPresentationController.sourceView = UIApplication.sharedApplication.windows[0].rootViewController.view;
+            videoEditor.popoverPresentationController.sourceRect = popoverSourceRect;
+      } else {
+          videoEditor.modalPresentationStyle = UIModalPresentationFullScreen;
+      }
       self.result = result;
       [UIApplication.sharedApplication.keyWindow.rootViewController presentViewController:videoEditor animated:YES completion:nil];
+      } else {
+          result([FlutterError errorWithCode:kImpossibleToTrimErrorCode message:@"" details:nil]);
+      }
   } else {
     result(FlutterMethodNotImplemented);
   }

@@ -16,6 +16,10 @@ import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.PluginRegistry
 
 
+object TrimVideoErrors {
+  const val trimErrorCode = "trim.error.default"
+}
+
 /** NativeVideoTrimmerPlugin */
 class NativeVideoTrimmerPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, PluginRegistry.ActivityResultListener {
   private lateinit var channel : MethodChannel
@@ -45,7 +49,7 @@ class NativeVideoTrimmerPlugin: FlutterPlugin, MethodCallHandler, ActivityAware,
       try {
         result.success(TrimVideo.getTrimmedVideoPath(data))
       } catch (e: Exception) {
-        result.error("trim.error", e.message, null);
+        result.error(TrimVideoErrors.trimErrorCode, e.message, null);
       }
       return true;
     }
