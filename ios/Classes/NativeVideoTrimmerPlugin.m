@@ -54,7 +54,7 @@ static NSString * kImpossibleToTrimErrorCode = @"trim.error.impossible";
                 CALL_FLOAT_ARG(@"sourceRectSizeHeight")
             );
             videoEditor.modalPresentationStyle = UIModalPresentationPopover;
-            videoEditor.popoverPresentationController.sourceView = UIApplication.sharedApplication.windows[0].rootViewController.view;
+            videoEditor.popoverPresentationController.sourceView = UIApplication.sharedApplication.keyWindow.rootViewController.view;
             videoEditor.popoverPresentationController.sourceRect = popoverSourceRect;
       } else {
           videoEditor.modalPresentationStyle = UIModalPresentationFullScreen;
