@@ -1,10 +1,12 @@
 package techpro.studio.native_video_trimmer
 
 
+import android.app.Activity
 import android.content.Intent
-import android.net.Uri
-import android.util.Log
+import androidx.activity.result.*
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.NonNull
+import com.gowtham.library.utils.LogMessage
 import com.gowtham.library.utils.TrimVideo
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -13,7 +15,6 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
-import io.flutter.plugin.common.PluginRegistry
 
 
 object TrimVideoErrors {
@@ -21,10 +22,12 @@ object TrimVideoErrors {
 }
 
 /** NativeVideoTrimmerPlugin */
-class NativeVideoTrimmerPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, PluginRegistry.ActivityResultListener {
+class NativeVideoTrimmerPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
   private lateinit var channel : MethodChannel
   private lateinit var activityPluginBinding: ActivityPluginBinding
   private lateinit var result: Result
+  private lateinit  var startForResult: ActivityResultLauncher<Intent>
+
 
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
     channel = MethodChannel(flutterPluginBinding.binaryMessenger, "native_video_trimmer")
@@ -41,19 +44,7 @@ class NativeVideoTrimmerPlugin: FlutterPlugin, MethodCallHandler, ActivityAware,
   }
 
   private fun trimVideo(path: String) {
-    TrimVideo.activity("file://$path").setMinDuration(1).setAccurateCut(true).start(activityPluginBinding.activity)
-  }
-
-  override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
-    if (requestCode == TrimVideo.VIDEO_TRIMMER_REQ_CODE && data != null) {
-      try {
-        result.success(TrimVideo.getTrimmedVideoPath(data))
-      } catch (e: Exception) {
-        result.error(TrimVideoErrors.trimErrorCode, e.message, null);
-      }
-      return true;
-    }
-    return false
+    TrimVideo.activity("file://$path").setMinDuration(1).setAccurateCut(true).start(activityPluginBinding.activity, startForResult)
   }
 
   override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
@@ -61,21 +52,29 @@ class NativeVideoTrimmerPlugin: FlutterPlugin, MethodCallHandler, ActivityAware,
   }
 
   override fun onAttachedToActivity(binding: ActivityPluginBinding) {
-    this.activityPluginBinding = binding
-    binding.addActivityResultListener(this)
+    startForResult = binding.activity.registerForActivityResult(ActivityResultContracts.StartActivityForResult(), binding.activity.intent) {
+        result: ActivityResult ->
+      if (result.resultCode == Activity.RESULT_OK &&
+        result.data != null) {
+        try {
+          this.result.success(TrimVideo.getTrimmedVideoPath(result.data))
+        } catch (e: Exception) {
+          this.result.error(TrimVideoErrors.trimErrorCode, e.message, null)
+        }
+      } else
+        LogMessage.v("videoTrimResultLauncher data is null")
+    }
   }
 
   override fun onDetachedFromActivityForConfigChanges() {
-
+    TODO("Not yet implemented")
   }
 
   override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
-    this.activityPluginBinding.removeActivityResultListener(this)
-    this.activityPluginBinding = binding
-    binding.addActivityResultListener(this)
+    TODO("Not yet implemented")
   }
 
   override fun onDetachedFromActivity() {
-    activityPluginBinding.removeActivityResultListener(this)
+    TODO("Not yet implemented")
   }
 }
