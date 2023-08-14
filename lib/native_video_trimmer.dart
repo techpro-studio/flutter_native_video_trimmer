@@ -11,7 +11,7 @@ class NativeVideoTrimmerErrorCodes {
 class NativeVideoTrimmer {
   static const MethodChannel _channel = const MethodChannel('native_video_trimmer');
 
-  static Future<String> trim(String path, {Rect iPadPopoverSourceRect}) async {
+  static Future<String?> trim(String path, {Rect? iPadPopoverSourceRect}) async {
     final Map<String, dynamic> params = {"path": path};
     if (iPadPopoverSourceRect != null) {
       params.addAll({
